@@ -82,7 +82,7 @@ class BitStream(object):
     def _bytearraytobitarray(bytes):
         bits = []
         for x in bytes:
-            for l in xrange(7, -1, -1):
+            for l in range(7, -1, -1):
                 bits.append(x >> l & 0x1)
         return bits
 
@@ -92,7 +92,7 @@ class BitStream(object):
         q = len(bits) % 8
         if q != 0:
             bits = bits[:]
-            for i in xrange(0, q):
+            for i in range(0, q):
                 bits.append(0)
 
         bytes = []
@@ -110,7 +110,7 @@ class BitStream(object):
     @staticmethod
     def _value_to_bits(value, length):
         bits = []
-        for x in xrange(length - 1, -1, -1):
+        for x in range(length - 1, -1, -1):
             bits.append((value >> x) & 0x1)
         return bits
 
@@ -306,11 +306,11 @@ def main(argv):
         parser.add_argument('-device', '--device', help="Device to use")
     args = parser.parse_args(argv[1:])
 
-    device = args.device
     libraryPath = args.library
     if libraryPath is None:
         if sys.platform == 'win32':
             discover = WinDiscover()
+            device = args.device
             libraryPath = discover.getLibrary(device)
     if libraryPath is None:
         raise Exception("No library or device provided")
