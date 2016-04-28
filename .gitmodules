@@ -1,0 +1,6 @@
+[submodule "deps/uds"]
+	path = deps/uds
+	url = ../uds
+[submodule "deps/j2534"]
+	path = deps/j2534
+	url = ../j2534
