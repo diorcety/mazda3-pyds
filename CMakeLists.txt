@@ -3,10 +3,19 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 INCLUDE(ExternalProject)
 
 SET(PYDS_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/output)
+
+FIND_PACKAGE(PythonInterp REQUIRED)
+if (PYTHONINTERP_FOUND)
+    EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "from distutils.sysconfig import get_python_lib; import sys; print get_python_lib().replace(sys.prefix, '').replace('dist-', 'site-')" OUTPUT_VARIABLE PYTHON_SITE_PACKAGES OUTPUT_STRIP_TRAILING_WHITESPACE)
+    IF (WIN32)
+        STRING(REGEX REPLACE "\\\\" "/" PYTHON_SITE_PACKAGES "${PYTHON_SITE_PACKAGES}")
+    ENDIF()
+ENDIF()
+
 SET(PYDS_DEFAULT_ARGS
         "-DCMAKE_PREFIX_PATH:PATH=${PYDS_INSTALL_PREFIX};${CMAKE_PREFIX_PATH}"
         "-DCMAKE_INSTALL_PREFIX:PATH=${PYDS_INSTALL_PREFIX}"
-        "-DPYTHON_SITE_PACKAGES:PATH=${PYDS_INSTALL_PREFIX}/lib/site-packages/")
+        "-DPYTHON_SITE_PACKAGES:PATH=${PYDS_INSTALL_PREFIX}${PYTHON_SITE_PACKAGES}")
 
 SET(j2534_source "${CMAKE_CURRENT_SOURCE_DIR}/deps/j2534")
 SET(j2534_build "${CMAKE_CURRENT_BINARY_DIR}/deps/j2534")
@@ -16,19 +25,18 @@ SET(uds_source "${CMAKE_CURRENT_SOURCE_DIR}/deps/uds")
 SET(uds_build "${CMAKE_CURRENT_BINARY_DIR}/deps/uds")
 EXTERNALPROJECT_ADD(uds SOURCE_DIR ${uds_source} BINARY_DIR ${uds_build} CMAKE_CACHE_ARGS ${PYDS_DEFAULT_ARGS} DEPENDS j2534)
 
-FIND_PROGRAM(PYTHON "python")
-
-if (PYTHON)
-    SET(MODULE_PY   "${CMAKE_CURRENT_SOURCE_DIR}/deps/ids")
+IF(PYTHONINTERP_FOUND)
+    SET(MODULE_PY             "${CMAKE_CURRENT_SOURCE_DIR}/deps/ids")
     SET(MODULE_PY_OUTPUT      "${MODULE_PY}/build/lib/ids.py")
-    STRING(REGEX REPLACE "\\/" "\\\\" MODULE_PY_PREFIX ${PYDS_INSTALL_PREFIX} )
-
+    SET(SCRIPT "import sys; import os; os.environ['PYTHONPATH'] = '${PYDS_INSTALL_PREFIX}${PYTHON_SITE_PACKAGES}'; sys.argv = ['setup.py','install','--prefix=${PYDS_INSTALL_PREFIX}']; execfile('setup.py')")
+    IF (WIN32)
+        STRING(REGEX REPLACE "\\/" "\\\\\\\\" SCRIPT "${SCRIPT}")
+    ENDIF()
+    FILE(WRITE ${CMAKE_BINARY_DIR}/setup.py "${SCRIPT}")
     ADD_CUSTOM_COMMAND(OUTPUT ${MODULE_PY_OUTPUT}
             WORKING_DIRECTORY ${MODULE_PY}
-            COMMAND ${PYTHON} setup.py build
-            COMMAND ${CMAKE_COMMAND} -E env "PYTHONPATH=${MODULE_PY_PREFIX}/lib/site-packages/"
-            ${PYTHON} setup.py install --prefix=${MODULE_PY_PREFIX}
+            COMMAND ${PYTHON_EXECUTABLE} setup.py build
+            COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_BINARY_DIR}/setup.py
             DEPENDS ${MODULE_PY}/ids.py)
-
     ADD_CUSTOM_TARGET(target ALL DEPENDS ${MODULE_PY_OUTPUT})
-endif()
+ENDIF()
