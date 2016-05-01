@@ -18,6 +18,7 @@ import j2534
 import uds
 import secalgo
 import extuds
+import types
 import ids
 
 ##

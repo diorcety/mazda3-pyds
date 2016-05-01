@@ -8,5 +8,5 @@ done
 ROOT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 pushd "${ROOT_DIR}"
 PYTHON_SITE_PACKAGES=`python  -c "from distutils.sysconfig import get_python_lib; import sys; print get_python_lib().replace(sys.prefix, '/').replace('dist-', 'site-')"`
-LD_LIBRARY_PATH="${ROOT_DIR}/output/lib" PYTHONPATH="${ROOT_DIR}/output/${PYTHON_SITE_PACKAGES}" python -m unittest tests.test_extuds
+LD_LIBRARY_PATH="${ROOT_DIR}/output/lib" PYTHONPATH="${ROOT_DIR}/output/${PYTHON_SITE_PACKAGES}" python -m unittest tests.test_types
 popd
