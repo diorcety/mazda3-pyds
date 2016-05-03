@@ -41,7 +41,7 @@ site.addsitedir('${PYDS_INSTALL_PREFIX}${PYTHON_SITE_PACKAGES}')
 sys.argv = ['setup.py','install','--prefix=${PYDS_INSTALL_PREFIX}']
 execfile('setup.py')
 from setuptools.command import easy_install
-easy_install.main(['-U','--prefix=${PYDS_INSTALL_PREFIX}','setuptools'])
+easy_install.main(['-U','--zip-ok','--prefix=${PYDS_INSTALL_PREFIX}','setuptools'])
     ")
     IF (WIN32)
         STRING(REGEX REPLACE "\\/" "\\\\\\\\" SCRIPT "${SCRIPT}")
@@ -58,7 +58,7 @@ os.environ['PYTHONPATH'] = '${PYDS_INSTALL_PREFIX}${PYTHON_SITE_PACKAGES}'
 sys.path.append('${PYDS_INSTALL_PREFIX}${PYTHON_SITE_PACKAGES}')
 site.addsitedir('${PYDS_INSTALL_PREFIX}${PYTHON_SITE_PACKAGES}')
 from setuptools.command import easy_install
-easy_install.main(['-U','--prefix=${PYDS_INSTALL_PREFIX}','mock'])
+easy_install.main(['-U','--zip-ok','--prefix=${PYDS_INSTALL_PREFIX}','mock'])
     ")
     IF (WIN32)
         STRING(REGEX REPLACE "\\/" "\\\\\\\\" SCRIPT "${SCRIPT}")

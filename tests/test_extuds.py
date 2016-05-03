@@ -8,6 +8,7 @@ __license__ = "GPL"
 __version__ = "0.0.1"
 
 import unittest
+
 try:
     from unittest.mock import Mock
 except ImportError:
@@ -15,13 +16,14 @@ except ImportError:
 from pyds.extuds import ExtendedUDS, NegativeResponseException
 import uds
 
+
 class UDS(object):
     pass
 
-class ExtendedUDS_Test(unittest.TestCase):
 
-    def check_output(self, udsChannel, output):
-        message = uds.UDSMessage(output)
+class ExtendedUDS_Test(unittest.TestCase):
+    def check_output(self, udsChannel, output, msgType=uds.UDSMessage):
+        message = msgType(output)
         udsChannel.send = Mock(side_effect=[message])
         return message
 
@@ -46,7 +48,19 @@ class ExtendedUDS_Test(unittest.TestCase):
         self.check_input(udsChannel, bytearray([0x22, 0xDE, 0x01]))
         self.assertEqual(de01Data, bytearray([0x00, 0x38, 0x10, 0xA0, 0x50]))
 
-    def test_initial(self):
+    def test_initial_hs(self):
+        # Prepare
+        udsChannel = UDS()
+        extUdsChannel = ExtendedUDS(udsChannel, False, False)
+
+        # RDBI 1
+        message = self.check_output(udsChannel, bytearray([0x7F, 0x22, 0x31]), uds.UDSNegativeResponseMessage)
+        with self.assertRaises(NegativeResponseException) as context:
+            extUdsChannel.send_rdbi(0xf183, 2000)
+        self.assertEqual(context.exception.getReply(), message)
+        self.check_input(udsChannel, bytearray([0x22, 0xF1, 0x83]))
+
+    def test_initial_ms(self):
         # Prepare
         udsChannel = UDS()
         extUdsChannel = ExtendedUDS(udsChannel, False, False)
@@ -72,7 +86,8 @@ class ExtendedUDS_Test(unittest.TestCase):
         self.check_input(udsChannel, bytearray([0x19, 0x02, 0x8F]))
 
         # RDBI 3
-        self.check_output(udsChannel, bytearray([0x62, 0xDE, 0x00, 0x45, 0x50, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x08, 0x00, 0x38, 0x92, 0x10]))
+        self.check_output(udsChannel, bytearray(
+            [0x62, 0xDE, 0x00, 0x45, 0x50, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x08, 0x00, 0x38, 0x92, 0x10]))
         extUdsChannel.send_rdbi(0xde00, 2000)
         self.check_input(udsChannel, bytearray([0x22, 0xDE, 0x00]))
 

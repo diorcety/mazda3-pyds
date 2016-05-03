@@ -5,17 +5,25 @@ _author__ = "Yann Diorcet"
 __license__ = "GPL"
 __version__ = "0.0.1"
 
-
 import struct
 import uds
+
+try:
+    input = raw_input
+except NameError:
+    input = input
 
 
 class NegativeResponseException(Exception):
     def __init__(self, reply):
         self.reply = reply
 
+    def getReply(self):
+        return self.reply
+
     def __str__(self):
-        return "Error %d for service %d" % (self.reply.getErrorCode(), self.reply.getRequestServiceID())
+        return "Error %x for service %x" % (self.reply.getErrorCode(), self.reply.getRequestServiceID())
+
 
 class ExtendedUDS(object):
     def __init__(self, udsChannel, step_by_step=True, debug=True):
@@ -54,8 +62,24 @@ class ExtendedUDS(object):
         if isinstance(reply, uds.UDSNegativeResponseMessage):
             raise NegativeResponseException(reply)
         if reply.getServiceID() != (sid | uds.UDS_REPLY_MASK):
-            raise Exception("Invalid reply %d for a request of type %d" % (reply.getServiceID(), sid))
+            raise Exception("Invalid reply %x for a request of type %x" % (reply.getServiceID(), sid))
         return reply
+
+    def send_dsc(self, type, timeout=2000):
+        reply = self.send(uds.UDS_SERVICE_DSC, bytearray([type]), timeout)
+        data = reply.getData()
+        rtype = self.slice_data(data, uds, 'UDS_DSC_SESSION_TYPE')[0]
+        if rtype != type:
+            raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rtype, type))
+        return data[uds.UDS_DSC_SESSION_PARAMETER_RECORD_OFFSET:]
+
+    def send_sa(self, type, data, timeout=2000):
+        reply = self.send(uds.UDS_SERVICE_SA, bytearray([type]) + data, timeout)
+        data = reply.getData()
+        rtype = self.slice_data(data, uds, 'UDS_SA_TYPE')[0]
+        if rtype != type:
+            raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rtype, type))
+        return data[uds.UDS_SA_KEY_OFFSET:]
 
     def send_rdbi(self, did, timeout=2000):
         reply = self.send(uds.UDS_SERVICE_RDBI, self.int16tobytes(did), timeout)
@@ -87,7 +111,7 @@ class ExtendedUDS(object):
         reply_data = reply.getData()
         reply_type = self.slice_data(reply_data, uds, 'UDS_DSC_SESSION_TYPE')
         if type != reply_type:
-            raise Exception("Invalid type %d for a request of type %d" % (type[0], reply_type[0]))
+            raise Exception("Invalid type %x for a request of type %x" % (type[0], reply_type[0]))
 
     def grant_security_access(self, algo):
         type = bytearray([uds.UDS_SA_TYPES_SEED_2])
@@ -95,7 +119,7 @@ class ExtendedUDS(object):
         seed_reply_data = seed_reply.getData()
         reply_type = self.slice_data(seed_reply_data, uds, 'UDS_SA_TYPE')
         if type != reply_type:
-            raise Exception("Invalid type %d for a request of type %d" % (type[0], reply_type[0]))
+            raise Exception("Invalid type %x for a request of type %x" % (type[0], reply_type[0]))
         sessionSeed = seed_reply_data[uds.UDS_SA_SEED_OFFSET:]
         key = algo.compute(sessionSeed)
         type = bytearray([uds.UDS_SA_TYPES_KEY_2])

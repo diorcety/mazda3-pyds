@@ -15,6 +15,7 @@ try:
 except NameError:
     input = input
 
+
 class FordCommon14229Security(object):
     initialValue = 0x00C541A9
     v1 = 0x00109028
@@ -47,11 +48,13 @@ class FordCommon14229Security(object):
         return bytearray([(buff >> 4 & 0xff), ((buff >> 20) & 0x0f) + ((buff >> 8) & 0xf0),
                           ((buff << 4) & 0xff) + ((buff >> 16) & 0x0f)])
 
-def getSecurityAlgorithm(algo, data):
+
+def getSecurityAlgorithm(algo, *data):
     if algo == 70:
-        return FordCommon14229Security(data)
+        return FordCommon14229Security(*data)
     else:
-        raise Exception("Invalid SecurityAlgorithm %d" %(algo))
+        raise Exception("Invalid SecurityAlgorithm %d" % (algo))
+
 
 ####################
 ####################

@@ -18,8 +18,9 @@ import j2534
 import uds
 import secalgo
 import extuds
-import types
+import pydstypes
 import ids
+
 
 ##
 ## For Windows platforms
@@ -80,6 +81,7 @@ class WinDiscover:
         except WindowsError:
             raise Exception("Device \"%s\" not found" % (device))
 
+
 def main(argv):
     parser = argparse.ArgumentParser(description="PYthon iDS tool")
     parser.add_argument('-library', '--library', help="Library to use")
@@ -112,8 +114,66 @@ def main(argv):
     udsChannel = extuds.ExtendedUDS(uds.UDS_J2534(channel, 0x7BF, 0x07B7, j2534.ISO15765, j2534.ISO15765_FRAME_PAD))
     de01Data = udsChannel.send_rdbi(0xde01, 2000)
     print("0xDE01 data: %s" % (" ".join(['%02x' % (k) for k in de01Data])))
+    de01Obj = pydstypes.MCP_BCE_2(de01Data)
 
-    return
+    print("Will enter in secure mode")
+    input("Press Enter to continue...")
+
+    # DSC
+
+    udsChannel.send_dsc(uds.UDS_DSC_SESSION_TYPES_EXTENDED)
+
+    # SA
+
+    seed = udsChannel.send_sa(uds.UDS_SA_TYPES_SEED_2, bytearray())
+    key = secalgo.getSecurityAlgorithm(70, vehicleSeed).compute(seed)
+    udsChannel.send_sa(uds.UDS_SA_TYPES_KEY_2, key)
+
+    '''
+    print("Will Set to light the headlight sensor")
+    input("Press Enter to continue...")
+
+    # Light
+    de01Obj.set_value(26, 7, 0x5)
+    de01ModData = de01Obj.to_bytearray()
+    udsChannel.send_wdbi(0xde01, de01ModData)
+
+    print("Will Set to medium light the headlight sensor")
+    input("Press Enter to continue...")
+
+    # Medium Light
+    de01Obj.set_value(26, 7, 0x4)
+    de01ModData = de01Obj.to_bytearray()
+    udsChannel.send_wdbi(0xde01, de01ModData)
+    '''
+
+    '''
+    print("Will disable 3 flash")
+    input("Press Enter to continue...")
+
+    # Disable
+    de01Obj.set_value(19, 3, 0x1)
+    de01ModData = de01Obj.to_bytearray()
+    udsChannel.send_wdbi(0xde01, de01ModData)
+
+    print("Will enable 3 flash")
+    input("Press Enter to continue...")
+
+    # Enable
+    de01Obj.set_value(19, 3, 0x2)
+    de01ModData = de01Obj.to_bytearray()
+    udsChannel.send_wdbi(0xde01, de01ModData)
+    '''
+
+    '''
+    print("Will disable autodoor lock")
+    input("Press Enter to continue...")
+
+    # Disable
+    de01Obj.set_value(0, 15, 0x1)
+    de01ModData = de01Obj.to_bytearray()
+    udsChannel.send_wdbi(0xde01, de01ModData)
+    '''
 
 
 if __name__ == "__main__":

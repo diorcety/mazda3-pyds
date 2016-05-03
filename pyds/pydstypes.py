@@ -7,6 +7,7 @@ __version__ = "0.0.1"
 
 import math
 
+
 class MCP_BCE_2(object):
     @staticmethod
     def _bytearraytobitarray(bytes):
@@ -35,7 +36,7 @@ class MCP_BCE_2(object):
                 i = 0
                 bytes.append(byte)
                 byte = 0
-        return bytes
+        return bytearray(bytes)
 
     @staticmethod
     def _value_to_bits(value, length):
@@ -78,6 +79,7 @@ class MCP_BCE_2(object):
 
     def set_value(self, offset, mask, value):
         self._set_value(self.bits, offset, mask, value)
+
 
 def getObject(type, data):
     if type == 'MCP_BCE_2':
