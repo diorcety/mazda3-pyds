@@ -72,7 +72,7 @@ class ExtendedUDS_Test(unittest.TestCase):
 
         # RDTCI 1
         self.check_output(udsChannel, bytearray([0x59, 0x02, 0xCA]))
-        extUdsChannel.send_rdtci(uds.UDS_RDTCI_REPORT_TYPES_BY_STATUS_MASK, 0x8f, 2000)
+        extUdsChannel.send_rdtci(uds.UDS_RDTCI_TYPES_BY_STATUS_MASK, 0x8f, 2000)
         self.check_input(udsChannel, bytearray([0x19, 0x02, 0x8F]))
 
         # RDBI 2
@@ -82,7 +82,7 @@ class ExtendedUDS_Test(unittest.TestCase):
 
         # RDTCI 2
         self.check_output(udsChannel, bytearray([0x59, 0x02, 0xCA, 0xC1, 0x55, 0x00, 0x08]))
-        extUdsChannel.send_rdtci(uds.UDS_RDTCI_REPORT_TYPES_BY_STATUS_MASK, 0x8f, 2000)
+        extUdsChannel.send_rdtci(uds.UDS_RDTCI_TYPES_BY_STATUS_MASK, 0x8f, 2000)
         self.check_input(udsChannel, bytearray([0x19, 0x02, 0x8F]))
 
         # RDBI 3

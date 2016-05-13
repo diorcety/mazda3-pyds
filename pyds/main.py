@@ -82,52 +82,78 @@ class WinDiscover:
             raise Exception("Device \"%s\" not found" % (device))
 
 
-def main(argv):
-    parser = argparse.ArgumentParser(description="PYthon iDS tool")
-    parser.add_argument('-library', '--library', help="Library to use")
-    # Add parameter for Windows platforms
-    if sys.platform == 'win32':
-        parser.add_argument('-device', '--device', help="Device to use")
-    args = parser.parse_args(argv[1:])
+def listen(device):
+    channel = device.connect(j2534.CAN, j2534.CAN_ID_BOTH, 125000)
+    vector = j2534.vector_passthru_msg()
+    vector.resize(16)
+    while True:
+        read = channel.readMsgs(vector, 2000)
+        print('Read %d messages' % (read))
 
-    libraryPath = args.library
-    if libraryPath is None:
-        if sys.platform == 'win32':
-            discover = WinDiscover()
-            device = args.device
-            libraryPath = discover.getLibrary(device)
-    if libraryPath is None:
-        raise Exception("No library or device provided")
 
-    # Print information
-    print("Library Path:     %s" % (libraryPath))
-    library = j2534.J2534Library(libraryPath)
-    device = library.open(None)
-    (firmwareVersion, dllVersion, apiVersion) = device.readVersion()
-    print("Firmware version: %s" % (firmwareVersion))
-    print("DLL version:      %s" % (dllVersion))
-    print("API version:      %s" % (apiVersion))
-    print("\n\n")
-
+def dummy(device):
     vehicleSeed = bytearray([0x4B, 0x30, 0x32, 0x31, 0x36])
     channel = device.connect(j2534.ISO15765, j2534.CAN_ID_BOTH, 125000)
-    udsChannel = extuds.ExtendedUDS(uds.UDS_J2534(channel, 0x7BF, 0x07B7, j2534.ISO15765, j2534.ISO15765_FRAME_PAD))
+    udsChannel = extuds.ExtendedUDS(uds.UDS_J2534(channel, 0x7BF, 0x07B7, j2534.ISO15765, j2534.ISO15765_FRAME_PAD), False, True)
+    de00Data = udsChannel.send_rdbi(0xde00, 2000)
+    print("0xDE00 data: %s" % (" ".join(['%02x' % (k) for k in de00Data])))
     de01Data = udsChannel.send_rdbi(0xde01, 2000)
-    print("0xDE01 data: %s" % (" ".join(['%02x' % (k) for k in de01Data])))
     de01Obj = pydstypes.MCP_BCE_2(de01Data)
+    print("0xDE01 data: %s" % (" ".join(['%02x' % (k) for k in de01Data])))
+
+    dd01Data = udsChannel.send_rdbi(0xdd01, 2000)
+    dd01Obj = pydstypes.Read(dd01Data)
+    print("0xDD01 data(Millage): %s" % (" ".join(['%02x' % (k) for k in dd01Data])))
+
+    da70Data = udsChannel.send_rdbi(0xda70, 2000)
+    da70Obj = pydstypes.Read(da70Data)
+    print("0xDA70 data(Door): %s" % (" ".join(['%02x' % (k) for k in da70Data])))
+
+    da7cData = udsChannel.send_rdbi(0xda7c, 2000)
+    da7cObj = pydstypes.Read(da7cData)
+    print("0xDA7C data(Horn): %s" % (" ".join(['%02x' % (k) for k in da7cData])))
+
+
+    print("Door lock status: %s" % ("Locked" if da70Obj.get_value(4, 0x1) else "Unlocked"))
+
+    '''
+    print("Will lock the doors")
+    input("Press Enter to continue...")
+    da70ObjOsc = pydstypes.Read(bytearray([0x0] * 7))
+    da70ObjOsc.set_value(16, 255, 0x4) # Lock
+    da70ModData = da70ObjOsc.to_bytearray()
+    udsChannel.send_wdbi(0xda70, da70ModData)
+
+    print("Will unlock the doors")
+    input("Press Enter to continue...")
+    da70ObjOsc = pydstypes.Read(bytearray([0x0] * 7))
+    da70ObjOsc.set_value(16, 255, 0x32) # Lock
+    da70ModData = da70ObjOsc.to_bytearray()
+    udsChannel.send_wdbi(0xda70, da70ModData)
+    '''
 
     print("Will enter in secure mode")
     input("Press Enter to continue...")
 
     # DSC
 
-    udsChannel.send_dsc(uds.UDS_DSC_SESSION_TYPES_EXTENDED)
+    udsChannel.send_dsc(uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION)
 
     # SA
 
     seed = udsChannel.send_sa(uds.UDS_SA_TYPES_SEED_2, bytearray())
     key = secalgo.getSecurityAlgorithm(70, vehicleSeed).compute(seed)
     udsChannel.send_sa(uds.UDS_SA_TYPES_KEY_2, key)
+
+    # Default
+    # de00ModData = bytearray([0x45, 0x50, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x08, 0x00, 0x38, 0x92, 0x10])
+    # Modified
+    # de00ModData = bytearray([0x45, 0x50, 0x00, 0x06, 0xA1, 0xE5, 0x0C, 0x43, 0x00, 0x20, 0x00, 0x38, 0x92, 0x10])
+    # udsChannel.send_wdbi(0xde00, de00ModData)
+
+    # Default
+    # de01ModData = bytearray([0x00, 0x38, 0x10, 0xa0, 0x50])
+    # udsChannel.send_wdbi(0xde01, de01ModData)
 
     '''
     print("Will Set to light the headlight sensor")
@@ -174,6 +200,40 @@ def main(argv):
     de01ModData = de01Obj.to_bytearray()
     udsChannel.send_wdbi(0xde01, de01ModData)
     '''
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(description="PYthon iDS tool")
+    parser.add_argument('-a', '--action', help="Action to do")
+    parser.add_argument('-l', '--library', help="Library to use")
+    # Add parameter for Windows platforms
+    if sys.platform == 'win32':
+        parser.add_argument('-d', '--device', help="Device to use")
+    args = parser.parse_args(argv[1:])
+
+    libraryPath = args.library
+    if libraryPath is None:
+        if sys.platform == 'win32':
+            discover = WinDiscover()
+            device = args.device
+            libraryPath = discover.getLibrary(device)
+    if libraryPath is None:
+        raise Exception("No library or device provided")
+
+    # Print information
+    print("Library Path:     %s" % (libraryPath))
+    library = j2534.J2534Library(libraryPath)
+    device = library.open(None)
+    (firmwareVersion, dllVersion, apiVersion) = device.readVersion()
+    print("Firmware version: %s" % (firmwareVersion))
+    print("DLL version:      %s" % (dllVersion))
+    print("API version:      %s" % (apiVersion))
+    print("\n\n")
+
+    if args.action == 'l':
+        listen(device)
+    else:
+        dummy(device)
 
 
 if __name__ == "__main__":

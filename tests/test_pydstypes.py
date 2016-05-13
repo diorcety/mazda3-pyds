@@ -8,8 +8,46 @@ __license__ = "GPL"
 __version__ = "0.0.1"
 
 import unittest
-from pyds.pydstypes import MCP_BCE_2
+from pyds.pydstypes import MCP_BCE_2, Read
 
+class Read_Test(unittest.TestCase):
+    # Byte array to bit array to byte array
+    def test_byte_bit_array(self):
+        data = bytearray([0x45, 0x50, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x08, 0x00, 0x38, 0x92, 0x10])
+        self.assertEqual(Read._bitarraytobytearray(Read._bytearraytobitarray(data)), data)
+
+    # Bit array to bytes array to bit array
+    def test_bit_bytes_array(self):
+        data = [0x1, 0x0, 0x1, 0x1, 0x1, 0x0, 0x1, 0x1]
+        self.assertEqual(MCP_BCE_2._bytearraytobitarray(MCP_BCE_2._bitarraytobytearray(data)), data)
+
+    def test_sanity(self):
+        mod = bytearray([0x00, 0x00, 0x00])
+        bs = Read(mod)
+        bs.set_value(5, 0x3, 2)
+        bs2 = Read(mod)
+        bs2.set_value(6, 0x1, 1)
+        self.assertEqual(bs.to_bytearray(), bs2.to_bytearray())
+
+    def test_door(self):
+        mod = bytearray([0x00, 0xa7, 0x00, 0x00, 0x00, 0x20, 0x020])
+        bs = Read(mod)
+        self.assertEqual(bs.get_value(4, 0x1), 0x0)  # Driver Side Door Lock Link Switch (Lock Side) OFF
+        self.assertEqual(bs.get_value(5, 0x1), 0x1)  # Driver Side Door Lock Link Switch (Unlock Side) ON
+        self.assertEqual(bs.get_value(14, 0x1), 0x0)  # All Door CLOSE
+        self.assertEqual(bs.get_value(15, 0x1), 0x0)  # Driver Door CLOSE
+        mod = bytearray([0x00, 0xa7, 0x00, 0x00, 0x00, 0xe0, 0x020])
+        bs = Read(mod)
+        self.assertEqual(bs.get_value(4, 0x1), 0x0)  # Driver Side Door Lock Link Switch (Lock Side) OFF
+        self.assertEqual(bs.get_value(5, 0x1), 0x1)  # Driver Side Door Lock Link Switch (Unlock Side) ON
+        self.assertEqual(bs.get_value(14, 0x1), 0x1)  # All Door OPEN
+        self.assertEqual(bs.get_value(15, 0x1), 0x1)  # Driver Door OPEN
+        mod = bytearray([0x00, 0xa7, 0x00, 0x00, 0x00, 0x20, 0x010])
+        bs = Read(mod)
+        self.assertEqual(bs.get_value(4, 0x1), 0x1)  # Driver Side Door Lock Link Switch (Lock Side) ON
+        self.assertEqual(bs.get_value(5, 0x1), 0x0)  # Driver Side Door Lock Link Switch (Unlock Side) OFF
+        self.assertEqual(bs.get_value(14, 0x1), 0x0)  # All Door CLOSE
+        self.assertEqual(bs.get_value(15, 0x1), 0x0)  # Driver Door CLOSE
 
 class MCP_BCE_2_Test(unittest.TestCase):
     # Byte array to bit array to byte array
@@ -72,6 +110,16 @@ class MCP_BCE_2_Test(unittest.TestCase):
         bs.set_value(11, 3, 0x1)
         self.assertEqual(bs.to_bytearray(), mod)
 
+    # Interior light door close
+    def test_interior_light_door_close(self):
+        mod = bytearray([0x00, 0x58, 0x10, 0xa0, 0x50])
+        bs = MCP_BCE_2(mod)
+        self.assertEqual(bs.get_value(8, 7), 0x2)  # 7.5s
+        bs = MCP_BCE_2(bytearray([0x00, 0x38, 0x10, 0xa0, 0x50]))
+        self.assertEqual(bs.get_value(8, 7), 0x1)  # 15 sec
+        bs.set_value(8, 7, 0x2)
+        self.assertEqual(bs.to_bytearray(), mod)
+
     # Coming light
     def test_coming_light(self):
         mod = bytearray([0x00, 0x38, 0x10, 0xa0, 0x70])
@@ -83,13 +131,23 @@ class MCP_BCE_2_Test(unittest.TestCase):
         self.assertEqual(bs.to_bytearray(), mod)
 
     # Auto door lock
-    def test_coming_light(self):
+    def test_auto_door_lock(self):
         mod = bytearray([0x10, 0x38, 0x10, 0xa0, 0x50])
         bs = MCP_BCE_2(mod)
         self.assertEqual(bs.get_value(0, 15), 0x1)  # disabled
         bs = MCP_BCE_2(bytearray([0x00, 0x38, 0x10, 0xa0, 0x50]))
         self.assertEqual(bs.get_value(0, 15), 0x0)  # not adopted
         bs.set_value(0, 15, 0x1)
+        self.assertEqual(bs.to_bytearray(), mod)
+
+    # Leaving home light
+    def test_leaving_home_light(self):
+        mod = bytearray([0x00, 0x38, 0x10, 0xa0, 0x48])
+        bs = MCP_BCE_2(mod)
+        self.assertEqual(bs.get_value(35, 3), 0x1)  # off
+        bs = MCP_BCE_2(bytearray([0x00, 0x38, 0x10, 0xa0, 0x50]))
+        self.assertEqual(bs.get_value(35, 3), 0x2)  # on
+        bs.set_value(35, 3, 0x1)
         self.assertEqual(bs.to_bytearray(), mod)
 
 

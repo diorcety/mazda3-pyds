@@ -45,6 +45,14 @@ class ExtendedUDS(object):
         len = getattr(module, field + len_str)
         return data[offset:(offset + len)]
 
+    @staticmethod
+    def buildMessage(reply):
+        # Work around SWIG issue
+        if (reply.getServiceID() & uds.UDS_REPLY_MASK) == uds.UDS_SERVICES_ERR:
+            return uds.UDSNegativeResponseMessage(reply.getData())
+        else:
+            return reply
+
     def send(self, sid, data, timeout=2000):
         fdata = bytearray([sid])
         fdata.extend(data)
@@ -56,7 +64,7 @@ class ExtendedUDS(object):
                 raise Exception("Interrupted by the user")
         if self.debug:
             print("Sending: %s" % (" ".join(['%02x' % (k) for k in fdata])))
-        reply = self.udsChannel.send(message, timeout)
+        reply = self.buildMessage(self.udsChannel.send(message, timeout))
         if self.debug:
             print("Received: %s" % (" ".join(['%02x' % (k) for k in reply.getData()])))
         if isinstance(reply, uds.UDSNegativeResponseMessage):
@@ -66,15 +74,15 @@ class ExtendedUDS(object):
         return reply
 
     def send_dsc(self, type, timeout=2000):
-        reply = self.send(uds.UDS_SERVICE_DSC, bytearray([type]), timeout)
+        reply = self.send(uds.UDS_SERVICES_DSC, bytearray([type]), timeout)
         data = reply.getData()
-        rtype = self.slice_data(data, uds, 'UDS_DSC_SESSION_TYPE')[0]
+        rtype = self.slice_data(data, uds, 'UDS_DSC_TYPE')[0]
         if rtype != type:
             raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rtype, type))
-        return data[uds.UDS_DSC_SESSION_PARAMETER_RECORD_OFFSET:]
+        return data[uds.UDS_DSC_PARAMETER_RECORD_OFFSET:]
 
     def send_sa(self, type, data, timeout=2000):
-        reply = self.send(uds.UDS_SERVICE_SA, bytearray([type]) + data, timeout)
+        reply = self.send(uds.UDS_SERVICES_SA, bytearray([type]) + data, timeout)
         data = reply.getData()
         rtype = self.slice_data(data, uds, 'UDS_SA_TYPE')[0]
         if rtype != type:
@@ -82,7 +90,7 @@ class ExtendedUDS(object):
         return data[uds.UDS_SA_KEY_OFFSET:]
 
     def send_rdbi(self, did, timeout=2000):
-        reply = self.send(uds.UDS_SERVICE_RDBI, self.int16tobytes(did), timeout)
+        reply = self.send(uds.UDS_SERVICES_RDBI, self.int16tobytes(did), timeout)
         data = reply.getData()
         rdid = self.bytestoint16(self.slice_data(data, uds, 'UDS_RDBI_DATA_IDENTIFIER'))
         if rdid != did:
@@ -90,15 +98,15 @@ class ExtendedUDS(object):
         return data[uds.UDS_RDBI_DATA_RECORD_OFFSET:]
 
     def send_rdtci(self, type, data, timeout=2000):
-        reply = self.send(uds.UDS_SERVICE_RDTCI, bytearray([type, data]), timeout)
+        reply = self.send(uds.UDS_SERVICES_RDTCI, bytearray([type, data]), timeout)
         data = reply.getData()
-        rtype = self.slice_data(data, uds, 'UDS_RDTCI_REPORT_TYPE')[0]
+        rtype = self.slice_data(data, uds, 'UDS_RDTCI_TYPE')[0]
         if rtype != type:
-            raise Exception("Invalid report type %x for a request of type %x" % (rtype, type))
+            raise Exception("Invalid type %x for a request of type %x" % (rtype, type))
         return data[uds.UDS_RDTCI_RECORD_OFFSET:]
 
     def send_wdbi(self, did, data, timeout=2000):
-        reply = self.send(uds.UDS_SERVICE_WDBI, self.int16tobytes(did) + data, timeout)
+        reply = self.send(uds.UDS_SERVICES_WDBI, self.int16tobytes(did) + data, timeout)
         data = reply.getData()
         rdid = self.bytestoint16(self.slice_data(data, uds, 'UDS_WDBI_DATA_IDENTIFIER'))
         if rdid != did:
@@ -107,15 +115,15 @@ class ExtendedUDS(object):
 
     def change_diagnostic_session(self, sessionType):
         type = bytearray([sessionType])
-        reply = self.send(uds.UDS_SERVICE_DSC, type)
+        reply = self.send(uds.UDS_SERVICES_DSC, type)
         reply_data = reply.getData()
-        reply_type = self.slice_data(reply_data, uds, 'UDS_DSC_SESSION_TYPE')
+        reply_type = self.slice_data(reply_data, uds, 'UDS_DSC_TYPE')
         if type != reply_type:
             raise Exception("Invalid type %x for a request of type %x" % (type[0], reply_type[0]))
 
     def grant_security_access(self, algo):
         type = bytearray([uds.UDS_SA_TYPES_SEED_2])
-        seed_reply = self.send(uds.UDS_SERVICE_SA, type)
+        seed_reply = self.send(uds.UDS_SERVICES_SA, type)
         seed_reply_data = seed_reply.getData()
         reply_type = self.slice_data(seed_reply_data, uds, 'UDS_SA_TYPE')
         if type != reply_type:
@@ -123,7 +131,7 @@ class ExtendedUDS(object):
         sessionSeed = seed_reply_data[uds.UDS_SA_SEED_OFFSET:]
         key = algo.compute(sessionSeed)
         type = bytearray([uds.UDS_SA_TYPES_KEY_2])
-        key_reply = self.send(uds.UDS_SERVICE_SA, type + key)
+        key_reply = self.send(uds.UDS_SERVICES_SA, type + key)
         key_reply_data = key_reply.getData()
         reply_type = self.slice_data(key_reply_data, uds, 'UDS_SA_TYPE')
         if type != reply_type:
