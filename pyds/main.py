@@ -113,25 +113,6 @@ def dummy(device):
     da7cObj = pydstypes.Read(da7cData)
     print("0xDA7C data(Horn): %s" % (" ".join(['%02x' % (k) for k in da7cData])))
 
-
-    print("Door lock status: %s" % ("Locked" if da70Obj.get_value(4, 0x1) else "Unlocked"))
-
-    '''
-    print("Will lock the doors")
-    input("Press Enter to continue...")
-    da70ObjOsc = pydstypes.Read(bytearray([0x0] * 7))
-    da70ObjOsc.set_value(16, 255, 0x4) # Lock
-    da70ModData = da70ObjOsc.to_bytearray()
-    udsChannel.send_wdbi(0xda70, da70ModData)
-
-    print("Will unlock the doors")
-    input("Press Enter to continue...")
-    da70ObjOsc = pydstypes.Read(bytearray([0x0] * 7))
-    da70ObjOsc.set_value(16, 255, 0x32) # Lock
-    da70ModData = da70ObjOsc.to_bytearray()
-    udsChannel.send_wdbi(0xda70, da70ModData)
-    '''
-
     print("Will enter in secure mode")
     input("Press Enter to continue...")
 
@@ -144,6 +125,24 @@ def dummy(device):
     seed = udsChannel.send_sa(uds.UDS_SA_TYPES_SEED_2, bytearray())
     key = secalgo.getSecurityAlgorithm(70, vehicleSeed).compute(seed)
     udsChannel.send_sa(uds.UDS_SA_TYPES_KEY_2, key)
+
+    '''
+    print("Will lock the doors")
+    input("Press Enter to continue...")
+    da70ObjOsc = pydstypes.Read(bytearray([0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]))
+    da70ObjOsc.set_value(16, 255, 4) # Lock
+    da70ModData = da70ObjOsc.to_bytearray()
+    udsChannel.send_iocbi(0xda70, uds.UDS_IOCBI_PARAMETERS_SHORT_TERM_ADJUSTMENT, da70ModData)
+    udsChannel.send_iocbi(0xda70, uds.UDS_IOCBI_PARAMETERS_RETURN_CONTROL_TO_ECU, bytearray([]))
+
+    print("Will unlock the doors")
+    input("Press Enter to continue...")
+    da70ObjOsc = pydstypes.Read(bytearray([0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]))
+    da70ObjOsc.set_value(16, 255, 32) # Unlock
+    da70ModData = da70ObjOsc.to_bytearray()
+    udsChannel.send_iocbi(0xda70, uds.UDS_IOCBI_PARAMETERS_SHORT_TERM_ADJUSTMENT, da70ModData)
+    udsChannel.send_iocbi(0xda70, uds.UDS_IOCBI_PARAMETERS_RETURN_CONTROL_TO_ECU, bytearray([]))
+    '''
 
     # Default
     # de00ModData = bytearray([0x45, 0x50, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x08, 0x00, 0x38, 0x92, 0x10])

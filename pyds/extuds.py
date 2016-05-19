@@ -113,6 +113,14 @@ class ExtendedUDS(object):
             raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rdid, did))
         return data[uds.UDS_RDBI_DATA_RECORD_OFFSET:]
 
+    def send_iocbi(self, did, parameter, state, timeout=2000):
+        reply = self.send(uds.UDS_SERVICES_IOCBI, self.int16tobytes(did)+ bytearray([parameter]) + state, timeout)
+        data = reply.getData()
+        rdid = self.bytestoint16(self.slice_data(data, uds, 'UDS_IOCBI_DATA_IDENTIFIER'))
+        if rdid != did:
+            raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rdid, did))
+        return data[uds.UDS_IOCBI_DATA_RECORD_OFFSET:]
+
     def change_diagnostic_session(self, sessionType):
         type = bytearray([sessionType])
         reply = self.send(uds.UDS_SERVICES_DSC, type)

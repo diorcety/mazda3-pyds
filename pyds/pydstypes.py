@@ -158,7 +158,7 @@ class Read(object):
 def getObject(type, data):
     if type == 'MCP_BCE_2':
         return MCP_BCE_2(data)
-    if type == 'Read' or type == "WriteOSC":
+    elif type == 'Read' or type == 'WriteOSC':
         return Read(data)
     else:
         raise Exception("Invalid Type %d" % (type))
