@@ -36,9 +36,9 @@ class WinDiscover:
 
     def listPassThruDevices(self):
         devices = []
-        passThruKey = self.winreg.OpenKey(self.winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\\PassThruSupport.04.04', 0,
-                                          self.winreg.KEY_READ | self.winreg.KEY_ENUMERATE_SUB_KEYS)
         try:
+            passThruKey = self.winreg.OpenKey(self.winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\\PassThruSupport.04.04', 0,
+                                              self.winreg.KEY_READ | self.winreg.KEY_ENUMERATE_SUB_KEYS)
             i = 0
             while True:
                 devices.append(self.winreg.EnumKey(passThruKey, i))
@@ -58,7 +58,7 @@ class WinDiscover:
         if device is None:
             if len(devices) == 1:
                 device = devices[0]
-            else:
+            elif len(devices) > 1:
                 while True:
                     index = 0
                     for device in devices:
@@ -94,7 +94,7 @@ def listen(device):
 def dummy(device):
     vehicleSeed = bytearray([0x4B, 0x30, 0x32, 0x31, 0x36])
     channel = device.connect(j2534.ISO15765, j2534.CAN_ID_BOTH, 125000)
-    udsChannel = extuds.ExtendedUDS(uds.UDS_J2534(channel, 0x7BF, 0x07B7, j2534.ISO15765, j2534.ISO15765_FRAME_PAD), False, True)
+    udsChannel = extuds.ExtendedUDS(uds.UDS_J2534(channel, 0x7BF, 0x7B7, j2534.ISO15765, j2534.ISO15765_FRAME_PAD), False, True)
     de00Data = udsChannel.send_rdbi(0xde00, 2000)
     print("0xDE00 data: %s" % (" ".join(['%02x' % (k) for k in de00Data])))
     de01Data = udsChannel.send_rdbi(0xde01, 2000)
@@ -116,6 +116,7 @@ def dummy(device):
     print("Will enter in secure mode")
     input("Press Enter to continue...")
 
+    
     # DSC
 
     udsChannel.send_dsc(uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION)
@@ -125,6 +126,17 @@ def dummy(device):
     seed = udsChannel.send_sa(uds.UDS_SA_TYPES_SEED_2, bytearray())
     key = secalgo.getSecurityAlgorithm(70, vehicleSeed).compute(seed)
     udsChannel.send_sa(uds.UDS_SA_TYPES_KEY_2, key)
+    
+    
+    '''
+    print("Will change As-Data configuration")
+    input("Press Enter to continue...")
+    de00ModData = bytearray([0x45, 0x50, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x00, 0x00, 0x38, 0x92, 0x10])
+    udsChannel.send_wdbi(0xde00, de00ModData, 500)
+
+    udsChannel.reset(uds.UDS_ER_TYPES_HARD_RESET)
+    '''
+    
 
     '''
     print("Will lock the doors")
@@ -190,7 +202,7 @@ def dummy(device):
     udsChannel.send_wdbi(0xde01, de01ModData)
     '''
 
-    '''
+    
     print("Will disable autodoor lock")
     input("Press Enter to continue...")
 
@@ -198,7 +210,8 @@ def dummy(device):
     de01Obj.set_value(0, 15, 0x1)
     de01ModData = de01Obj.to_bytearray()
     udsChannel.send_wdbi(0xde01, de01ModData)
-    '''
+    
+    
 
 
 def main(argv):
@@ -221,7 +234,7 @@ def main(argv):
 
     # Print information
     print("Library Path:     %s" % (libraryPath))
-    library = j2534.J2534Library(libraryPath)
+    library = j2534.loadJ2534Library(libraryPath)
     device = library.open(None)
     (firmwareVersion, dllVersion, apiVersion) = device.readVersion()
     print("Firmware version: %s" % (firmwareVersion))

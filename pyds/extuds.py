@@ -120,6 +120,14 @@ class ExtendedUDS(object):
         if rdid != did:
             raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rdid, did))
         return data[uds.UDS_IOCBI_DATA_RECORD_OFFSET:]
+		
+    def reset(self, resetType):
+        type = bytearray([resetType])
+        reply = self.send(uds.UDS_SERVICES_ER, type)
+        reply_data = reply.getData()
+        reply_type = self.slice_data(reply_data, uds, 'UDS_ER_TYPE')
+        if type != reply_type:
+            raise Exception("Invalid type %x for a request of type %x" % (type[0], reply_type[0]))
 
     def change_diagnostic_session(self, sessionType):
         type = bytearray([sessionType])
