@@ -1,3 +1,4 @@
 *.pyc
 output/
+build/
 __pycache__
