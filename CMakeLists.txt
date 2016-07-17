@@ -71,5 +71,5 @@ easy_install.main(['-U','--zip-ok','--prefix=${PYDS_INSTALL_PREFIX}','mock'])
             COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_BINARY_DIR}/setup.py
             COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_BINARY_DIR}/setup2.py
             DEPENDS ${MODULE_PY}/ids.py)
-    ADD_CUSTOM_TARGET(target ALL DEPENDS ${MODULE_PY_OUTPUT})
+    ADD_CUSTOM_TARGET(ids ALL DEPENDS ${MODULE_PY_OUTPUT})
 ENDIF()
