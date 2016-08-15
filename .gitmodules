@@ -1,9 +1,9 @@
 [submodule "deps/uds"]
 	path = deps/uds
-	url = ../uds
+	url = ../mazda3-uds
 [submodule "deps/j2534"]
 	path = deps/j2534
-	url = ../j2534
+	url = ../mazda3-j2534
 [submodule "deps/ids"]
 	path = deps/ids
 	url = ../mazda3-ids
