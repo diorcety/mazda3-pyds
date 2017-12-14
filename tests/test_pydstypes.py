@@ -26,6 +26,7 @@ __version__ = "0.0.1"
 import unittest
 from pyds.pydstypes import MCP_BCE_2, Read
 
+
 class Read_Test(unittest.TestCase):
     # Byte array to bit array to byte array
     def test_byte_bit_array(self):
@@ -64,6 +65,7 @@ class Read_Test(unittest.TestCase):
         self.assertEqual(bs.get_value(5, 0x1), 0x0)  # Driver Side Door Lock Link Switch (Unlock Side) OFF
         self.assertEqual(bs.get_value(14, 0x1), 0x0)  # All Door CLOSE
         self.assertEqual(bs.get_value(15, 0x1), 0x0)  # Driver Door CLOSE
+
 
 class MCP_BCE_2_Test(unittest.TestCase):
     # Byte array to bit array to byte array

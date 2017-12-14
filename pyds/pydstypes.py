@@ -263,6 +263,7 @@ class Normal(object):
     def __len__(self):
         return len(self.bits)
 
+
 def getObject(type, data):
     if type == 'MCP_BCE_2':
         return MCP_BCE_2(data)

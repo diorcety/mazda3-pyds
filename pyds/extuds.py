@@ -25,6 +25,9 @@ __version__ = "0.0.1"
 
 import struct
 import uds
+import logging
+
+logger = logging.getLogger(__name__)
 
 try:
     input = raw_input
@@ -44,9 +47,8 @@ class NegativeResponseException(Exception):
 
 
 class ExtendedUDS(object):
-    def __init__(self, udsChannel, step_by_step=True, debug=True):
+    def __init__(self, udsChannel, step_by_step=True):
         self.step_by_step = step_by_step
-        self.debug = debug
         self.udsChannel = udsChannel
 
     @staticmethod
@@ -54,8 +56,16 @@ class ExtendedUDS(object):
         return struct.pack(">H", number)
 
     @staticmethod
+    def int32tobytes(number):
+        return struct.pack(">I", number)
+
+    @staticmethod
     def bytestoint16(bytes):
         return struct.unpack(">H", bytes)[0]
+
+    @staticmethod
+    def bytestoint32(bytes):
+        return struct.unpack(">I", bytes)[0]
 
     @staticmethod
     def slice_data(data, module, field, offset_str='_OFFSET', len_str='_LEN'):
@@ -80,11 +90,9 @@ class ExtendedUDS(object):
             response = input("Are you sure to send this? ")
             if response != 'YES':
                 raise Exception("Interrupted by the user")
-        if self.debug:
-            print("Sending: %s" % (" ".join(['%02x' % (k) for k in fdata])))
+        logger.debug("Sending: %s" % (" ".join(['%02x' % (k) for k in fdata])))
         reply = self.buildMessage(self.udsChannel.send(message, timeout))
-        if self.debug:
-            print("Received: %s" % (" ".join(['%02x' % (k) for k in reply.getData()])))
+        logger.debug("Received: %s" % (" ".join(['%02x' % (k) for k in reply.getData()])))
         if isinstance(reply, uds.UDSNegativeResponseMessage):
             raise NegativeResponseException(reply)
         if reply.getServiceID() != (sid | uds.UDS_REPLY_MASK):
@@ -132,16 +140,30 @@ class ExtendedUDS(object):
         return data[uds.UDS_RDBI_DATA_RECORD_OFFSET:]
 
     def send_iocbi(self, did, parameter, state, timeout=2000):
-        reply = self.send(uds.UDS_SERVICES_IOCBI, self.int16tobytes(did)+ bytearray([parameter]) + state, timeout)
+        reply = self.send(uds.UDS_SERVICES_IOCBI, self.int16tobytes(did) + bytearray([parameter]) + state, timeout)
         data = reply.getData()
         rdid = self.bytestoint16(self.slice_data(data, uds, 'UDS_IOCBI_DATA_IDENTIFIER'))
         if rdid != did:
             raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rdid, did))
-        return data[uds.UDS_IOCBI_DATA_RECORD_OFFSET:]
-		
+        return data[uds.UDS_IOCBI_STATE_OFFSET:]
+
+    def send_cdtcs(self, func, timeout=2000):
+        reply = self.send(uds.UDS_SERVICES_CDTCS, bytearray(func), timeout)
+        data = reply.getData()
+        rfunc = self.slice_data(data, uds, 'UDS_CDTCS_TYPE')[0]
+        if rfunc != func:
+            raise Exception("Invalid func %x for a request of type %x" % (rfunc, func))
+
+    def send_cc(self, func, type, timeout=2000):
+        reply = self.send(uds.UDS_SERVICES_CC, bytearray(func, type))
+        data = reply.getData()
+        rfunc = self.slice_data(data, uds, 'UDS_CC_SUB_FUNCTION')[0]
+        if rfunc != func:
+            raise Exception("Invalid func %x for a request of type %x" % (rfunc, func))
+
     def reset(self, resetType):
         type = bytearray([resetType])
-        reply = self.send(uds.UDS_SERVICES_ER, type)
+        reply = self.send(uds.UDS_SERVICES_ER, type, timeout)
         reply_data = reply.getData()
         reply_type = self.slice_data(reply_data, uds, 'UDS_ER_TYPE')
         if type != reply_type:
@@ -149,7 +171,7 @@ class ExtendedUDS(object):
 
     def change_diagnostic_session(self, sessionType):
         type = bytearray([sessionType])
-        reply = self.send(uds.UDS_SERVICES_DSC, type)
+        reply = self.send(uds.UDS_SERVICES_DSC, type, timeout)
         reply_data = reply.getData()
         reply_type = self.slice_data(reply_data, uds, 'UDS_DSC_TYPE')
         if type != reply_type:
@@ -157,7 +179,7 @@ class ExtendedUDS(object):
 
     def grant_security_access(self, algo):
         type = bytearray([uds.UDS_SA_TYPES_SEED_2])
-        seed_reply = self.send(uds.UDS_SERVICES_SA, type)
+        seed_reply = self.send(uds.UDS_SERVICES_SA, type, timeout)
         seed_reply_data = seed_reply.getData()
         reply_type = self.slice_data(seed_reply_data, uds, 'UDS_SA_TYPE')
         if type != reply_type:
@@ -165,8 +187,54 @@ class ExtendedUDS(object):
         sessionSeed = seed_reply_data[uds.UDS_SA_SEED_OFFSET:]
         key = algo.compute(sessionSeed)
         type = bytearray([uds.UDS_SA_TYPES_KEY_2])
-        key_reply = self.send(uds.UDS_SERVICES_SA, type + key)
+        key_reply = self.send(uds.UDS_SERVICES_SA, type + key, timeout)
         key_reply_data = key_reply.getData()
         reply_type = self.slice_data(key_reply_data, uds, 'UDS_SA_TYPE')
         if type != reply_type:
             raise Exception("Invalid type %d for a request of type %d" % (type[0], reply_type[0]))
+
+    def upload(self, addr_tuple, size_tuple):
+        addr, addr_s = addr_tuple
+        size, size_s = size_tuple
+        compression = 0
+        encryption = 0
+        dfi(0x0F & compression) << 0 | (0x0F & encryption) << 4
+        alfi = (0x0F & addr_s) << 0 | (0x0F & size_s) << 4
+        mem_addr = int32tobytes(addr)[0:addr_s]
+        mem_size = int32tobytes(size)[0:size_s]
+
+        # Request for upload
+        ba = bytearray([dfi, alfi, mem_addr, mem_size])
+        upload_reply_data = self.send(uds.UDS_SERVICES_RU, ba, timeout)
+        data = reply.getData()
+        lfi = self.slice_data(upload_reply_data, uds, 'UDS_RU_LENGTH_FORMAT_IDENTIFIER')[0]
+        max_number_block_length = upload_reply_data[
+                                  UDS_RU_MAX_NUMBER_OF_BLOCK_LENGTH_OFFSET:UDS_RU_MAX_NUMBER_OF_BLOCK_LENGTH_OFFSET + lfi]
+
+        sbsc = 1
+        data = bytearray()
+        while size > len(data):
+            # Ask for data
+            ba = bytearray([sbsc])
+            td_reply = self.send(uds.UDS_SERVICES_TD, ba, timeout)
+            td_reply_data = td_reply.getData()
+
+            # Check the reply
+            rbsc = self.slice_data(td_reply_data, uds, 'UDS_TD_BLOCK_SEQUENCE_COUNTER')[0]
+            if rbsc != sbsc:
+                raise Exception("Invalid block sequence counter value %d for a request of value %d" % (rbsc, sbsc))
+            if len(td_reply_data) >= max_number_block_length:
+                raise Exception("Invalid data length")
+
+            # Append
+            packet_data = td_reply_data[UDS_TD_TRANSFER_PARAMETER_RECORD_OFFSET:]
+            data.extend(packet_data)
+            print("Progression %.0f (%d of %d)" % ((len(data) * 100) / size, len(data), size),
+                  sep='\r', end='', flush=True)
+
+            # Increment
+            sbsc = (sbsc + 1) % 256
+
+        # End of transfer
+        self.send(uds.UDS_SERVICES_RTE, bytearray([]), timeout)
+        print("End of the transfer")

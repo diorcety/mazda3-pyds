@@ -25,19 +25,23 @@ __version__ = "0.0.1"
 
 import unittest
 from pyds.pydstypes import Normal, MCP_BCE_2
-from pyds.main import unlock_features
+from pyds.actions import unlock_rbcm_features
+
 
 class Pyds_Test(unittest.TestCase):
-    # Byte array to bit array to byte array
-    def test_unlock(self):
-        de00data = bytearray(   [0x45, 0x50, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x08, 0x00, 0x38, 0x92, 0x10])
-        de00dataMod = bytearray([0x45, 0xD0, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x20, 0x00, 0x38, 0x92, 0x10])
-        de01data = bytearray(   [0x00, 0x38, 0x10, 0xa0, 0x70])
-        de01dataMod = bytearray([0x10, 0x38, 0x10, 0xa0, 0x70])
 
-        de00dataObj = Normal(de00data)        
-        de01dataObj = MCP_BCE_2(de01data)
-        
-        ret = unlock_features({0xde00: de00dataObj, 0xde01: de01dataObj})
-        self.assertEqual(ret[0xde00].to_bytearray(), de00dataMod)
-        self.assertEqual(ret[0xde01].to_bytearray(), de01dataMod)
+    def test_unlock_rbcm(self):
+        de00data = bytearray([0x45, 0x50, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x08, 0x00, 0x38, 0x92, 0x10])
+        de00data_mod = bytearray([0x45, 0xD0, 0x00, 0x06, 0xA1, 0xA5, 0x0C, 0x43, 0x00, 0x20, 0x00, 0x38, 0x92, 0x10])
+        de01data = bytearray([0x00, 0x38, 0x10, 0xa0, 0x70])
+        de01data_mod = bytearray([0x10, 0x38, 0x10, 0xa0, 0x70])
+
+        de00data_obj = Normal(de00data)
+        de01data_obj = MCP_BCE_2(de01data)
+
+        ret = unlock_rbcm_features({0xde00: de00data_obj, 0xde01: de01data_obj})
+        self.assertEqual(ret[0xde00].to_bytearray(), de00data_mod)
+        self.assertEqual(ret[0xde01].to_bytearray(), de01data_mod)
+
+    def test_enable_scbs_r(self):
+        pass
