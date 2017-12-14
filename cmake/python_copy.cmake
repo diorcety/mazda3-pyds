@@ -1,0 +1,1 @@
+EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy_directory "${SRC}" "${BUILD}")

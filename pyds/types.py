@@ -16,7 +16,7 @@
 #
 
 # Fix Python 2.x.
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 
 __author__ = "Yann Diorcet"
 __license__ = "GPL"
@@ -99,9 +99,10 @@ class MCP_BCE_2(object):
 
     def __copy__(self):
         return MCP_BCE_2(self.to_bytearray())
-        
+
     def __len__(self):
         return len(self.bits)
+
 
 class Read(object):
     @staticmethod
@@ -179,9 +180,10 @@ class Read(object):
 
     def __copy__(self):
         return Read(self.to_bytearray())
-        
+
     def __len__(self):
         return len(self.bits)
+
 
 class Normal(object):
     @staticmethod
@@ -259,11 +261,12 @@ class Normal(object):
 
     def __copy__(self):
         return Normal(self.to_bytearray())
-        
+
     def __len__(self):
         return len(self.bits)
 
-def getObject(type, data):
+
+def get_object(type, data):
     if type == 'MCP_BCE_2':
         return MCP_BCE_2(data)
     elif type == 'Read' or type == 'WriteOSC':

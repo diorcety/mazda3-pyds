@@ -5,6 +5,6 @@ setlocal
 SET PYTHONPATH=%root_path%output\%PYTHON_SITE_PACKAGES%
 SET PATH=%root_path%output\bin;%PATH%
 pushd "%root_path%"
-python -m unittest tests.test_pydstypes tests.test_extuds tests.test_pyds
+python -m unittest tests.test_pydstypes tests.test_pyds tests.test_extuds
 popd
 endlocal

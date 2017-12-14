@@ -7,4 +7,4 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 ROOT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 PYTHON_SITE_PACKAGES=`python  -c "from distutils.sysconfig import get_python_lib; import sys; print get_python_lib().replace(sys.prefix, '/').replace('dist-', 'site-')"`
-LD_LIBRARY_PATH="${ROOT_DIR}/output/lib" PYTHONPATH="${ROOT_DIR}/output/${PYTHON_SITE_PACKAGES}" python ${ROOT_DIR}/pyds/main.py $@
+LD_LIBRARY_PATH="${ROOT_DIR}/output/lib" PYTHONPATH="${ROOT_DIR}/output/${PYTHON_SITE_PACKAGES}" python -m pyds $@
