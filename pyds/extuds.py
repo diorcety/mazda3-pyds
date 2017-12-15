@@ -17,7 +17,7 @@
 #
 
 # Fix Python 2.x.
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 
 __author__ = "Yann Diorcet"
 __license__ = "GPL"
@@ -47,9 +47,9 @@ class NegativeResponseException(Exception):
 
 
 class ExtendedUDS(object):
-    def __init__(self, udsChannel, step_by_step=True):
+    def __init__(self, uds_channel, step_by_step=True):
         self.step_by_step = step_by_step
-        self.udsChannel = udsChannel
+        self._uds_channel = uds_channel
 
     @staticmethod
     def int16tobytes(number):
@@ -91,7 +91,7 @@ class ExtendedUDS(object):
             if response != 'YES':
                 raise Exception("Interrupted by the user")
         logger.debug("Sending: %s" % (" ".join(['%02x' % (k) for k in fdata])))
-        reply = self.buildMessage(self.udsChannel.send(message, timeout))
+        reply = self.buildMessage(self._uds_channel.send(message, timeout))
         logger.debug("Received: %s" % (" ".join(['%02x' % (k) for k in reply.getData()])))
         if isinstance(reply, uds.UDSNegativeResponseMessage):
             raise NegativeResponseException(reply)

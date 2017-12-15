@@ -24,7 +24,7 @@ __license__ = "GPL"
 __version__ = "0.0.1"
 
 import unittest
-from pyds.pydstypes import Normal, MCP_BCE_2
+from pyds.types import Normal, MCP_BCE_2
 from pyds.actions import unlock_rbcm_features
 
 

@@ -17,10 +17,16 @@
 #
 
 # Fix Python 2.x.
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 
-from structs import *
+__author__ = "Yann Diorcet"
+__license__ = "GPL"
+__version__ = "0.0.1"
+
 import uds
+
+from enum import Enum
+from pyds.structs import *
 
 
 class Mazda3_2015(Enum):
@@ -46,7 +52,7 @@ vehicles_data = {
             CanBus.MS: 125000,
         },
         {
-            Mazda3_2015.RBCM: Module(CanBus.MS, Security(Algo.Ford, {
+            Mazda3_2015.RBCM: Module(CanBus.MS, Security(Algorithm.Ford, {
                 SecurityType.SelfTest: SecurityData(
                     0,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
@@ -63,7 +69,7 @@ vehicles_data = {
                     [75, 48, 50, 49, 54, 0]
                 ),
             })),
-            Mazda3_2015.EATC: Module(CanBus.MS, Security(Algo.Ford, {
+            Mazda3_2015.EATC: Module(CanBus.MS, Security(Algorithm.Ford, {
                 SecurityType.SelfTest: SecurityData(
                     0,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
@@ -81,7 +87,7 @@ vehicles_data = {
                 ),
             })),
 
-            Mazda3_2015.EPS: Module(CanBus.HS, Security(Algo.Ford, {
+            Mazda3_2015.EPS: Module(CanBus.HS, Security(Algorithm.Ford, {
                 SecurityType.SelfTest: SecurityData(
                     0,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
@@ -98,7 +104,7 @@ vehicles_data = {
                     [0, 0, 0, 0, 0, 0]
                 ),
             })),
-            Mazda3_2015.ICA: Module(CanBus.HS, Security(Algo.Ford, {
+            Mazda3_2015.ICA: Module(CanBus.HS, Security(Algorithm.Ford, {
                 SecurityType.SelfTest: SecurityData(
                     0,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
@@ -115,7 +121,7 @@ vehicles_data = {
                     [0, 0, 0, 0, 0, 0]
                 ),
             })),
-            Mazda3_2015.RCM: Module(CanBus.HS, Security(Algo.Ford, {
+            Mazda3_2015.RCM: Module(CanBus.HS, Security(Algorithm.Ford, {
                 SecurityType.SelfTest: SecurityData(
                     0,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
@@ -132,7 +138,7 @@ vehicles_data = {
                     [0, 0, 0, 0, 0, 0]
                 ),
             })),
-            Mazda3_2015.FSC: Module(CanBus.HS, Security(Algo.Ford, {
+            Mazda3_2015.FSC: Module(CanBus.HS, Security(Algorithm.Ford, {
                 SecurityType.SelfTest: SecurityData(
                     0,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
@@ -149,7 +155,7 @@ vehicles_data = {
                     [0, 0, 0, 0, 0, 0]
                 ),
             })),
-            Mazda3_2015.IC: Module(CanBus.HS, Security(Algo.Ford, {
+            Mazda3_2015.IC: Module(CanBus.HS, Security(Algorithm.Ford, {
                 SecurityType.SelfTest: SecurityData(
                     0,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
@@ -166,7 +172,7 @@ vehicles_data = {
                     [78, 83, 89, 78, 83, 0]
                 ),
             })),
-            Mazda3_2015.PCM: Module(CanBus.HS, Security(Algo.Ford, {
+            Mazda3_2015.PCM: Module(CanBus.HS, Security(Algorithm.Ford, {
                 SecurityType.Reprog: SecurityData(
                     uds.UDS_SA_TYPES_SEED,
                     uds.UDS_DSC_TYPES_PROGRAMMING_SESSION,
@@ -188,7 +194,7 @@ vehicles_data = {
                     [77, 97, 122, 100, 65, 0]
                 ),
             })),
-            Mazda3_2015.SSU: Module(CanBus.HS, Security(Algo.Ford, {
+            Mazda3_2015.SSU: Module(CanBus.HS, Security(Algorithm.Ford, {
                 SecurityType.SelfTest: SecurityData(
                     0,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,

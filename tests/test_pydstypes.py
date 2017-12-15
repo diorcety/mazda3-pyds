@@ -24,7 +24,7 @@ __license__ = "GPL"
 __version__ = "0.0.1"
 
 import unittest
-from pyds.pydstypes import MCP_BCE_2, Read
+from pyds.types import MCP_BCE_2, Read
 
 
 class Read_Test(unittest.TestCase):

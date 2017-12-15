@@ -17,7 +17,7 @@
 #
 
 # Fix Python 2.x.
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
 
 __author__ = "Yann Diorcet"
 __license__ = "GPL"
@@ -52,21 +52,21 @@ class FordCommon14229Security(object):
 
         for b in challenge:
             for j in range(0, 8):
-                tempBuffer = 0
+                temp_buffer = 0
                 if (b ^ buff) & 0x1:
                     buff = buff | 0x1000000
-                    tempBuffer = self.v1
+                    temp_buffer = self.v1
                 b = b >> 1
-                tempBuffer = tempBuffer ^ (buff >> 1)
-                tempBuffer = tempBuffer & (self.v1)
-                tempBuffer = tempBuffer | (self.v2 & (buff >> 1))
-                buff = tempBuffer & 0xffffff
+                temp_buffer = temp_buffer ^ (buff >> 1)
+                temp_buffer = temp_buffer & (self.v1)
+                temp_buffer = temp_buffer | (self.v2 & (buff >> 1))
+                buff = temp_buffer & 0xffffff
 
         return bytearray([(buff >> 4 & 0xff), ((buff >> 20) & 0x0f) + ((buff >> 8) & 0xf0),
                           ((buff << 4) & 0xff) + ((buff >> 16) & 0x0f)])
 
 
-def getSecurityAlgorithm(algo, *data):
+def get_security_algorithm(algo, *data):
     if algo == 70:
         return FordCommon14229Security(*data)
     else:

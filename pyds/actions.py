@@ -17,7 +17,11 @@
 #
 
 # Fix Python 2.x.
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
+
+__author__ = "Yann Diorcet"
+__license__ = "GPL"
+__version__ = "0.0.1"
 
 import copy
 import logging
@@ -73,6 +77,13 @@ def unlock_autodoorlock(data):
         logger.info("\"auto door lock\" seems already unlocked")
 
 
+def unlock_rbcm_features(data):
+    data = copy.deepcopy(data)
+    unlock_autodoorlock(data)
+    # unlock_healightofftimer(data) # Not working, something missing
+    return data
+
+
 def enable_scbs_r(data):
     disabled = False
     if data[0xde00].get_value(0x50 * 8 + 6, 1) != 0x1:
@@ -89,8 +100,7 @@ def enable_scbs_r(data):
         logger.info("\"SCBS-R\" seems already enabled")
 
 
-def unlock_rbcm_features(data):
+def unlock_ic_features(data):
     data = copy.deepcopy(data)
-    unlock_autodoorlock(data)
-    # unlock_healightofftimer(data) # Not working, something missing
+    enable_scbs_r(data)
     return data

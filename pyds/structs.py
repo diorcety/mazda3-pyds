@@ -17,12 +17,16 @@
 #
 
 # Fix Python 2.x.
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import
+
+__author__ = "Yann Diorcet"
+__license__ = "GPL"
+__version__ = "0.0.1"
 
 from enum import Enum
 
 
-class Algo(Enum):
+class Algorithm(Enum):
     Ford = 70
 
 
@@ -54,18 +58,18 @@ class SecurityData(object):
 
 
 class Security(object):
-    def __init__(self, algo, conf):
+    def __init__(self, algorithm, configurations):
         super(Security, self).__init__()
-        self._algo = algo
-        self._conf = conf
+        self._algorithm = algorithm
+        self._configurations = configurations
 
     @property
-    def algo(self):
-        return self._algo
+    def algorithm(self):
+        return self._algorithm
 
     @property
-    def conf(self):
-        return self._conf
+    def configurations(self):
+        return self._configurations
 
 
 class CanBus(Enum):

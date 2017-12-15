@@ -60,6 +60,7 @@ site.addsitedir('${PYDS_INSTALL_PREFIX}${PYTHON_SITE_PACKAGES}')
 from setuptools.command import easy_install
 easy_install.main(['-U','--zip-ok','--prefix=${PYDS_INSTALL_PREFIX}','mock'])
 easy_install.main(['-U','--zip-ok','--prefix=${PYDS_INSTALL_PREFIX}','enum34'])
+easy_install.main(['-U','--zip-ok','--prefix=${PYDS_INSTALL_PREFIX}','cmd2'])
     ")
     IF (WIN32)
         STRING(REGEX REPLACE "\\/" "\\\\\\\\" SCRIPT "${SCRIPT}")

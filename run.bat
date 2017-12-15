@@ -4,5 +4,5 @@ for /f %%i in ('python  -c "from distutils.sysconfig import get_python_lib; impo
 setlocal
 SET PYTHONPATH=%root_path%output\%PYTHON_SITE_PACKAGES%
 SET PATH=%root_path%output\bin;%PATH%
-python pyds/main.py %*
+python -m pyds %*
 endlocal
