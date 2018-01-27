@@ -86,13 +86,14 @@ def unlock_rbcm_features(data):
 
 def enable_scbs_r(data):
     disabled = False
-    if data[0xde00].get_value(0x50 * 8 + 6, 1) != 0x1:
+    a_16_b2 = (((16 - 1) * 5) + 2) * 8
+    if data[0xf106].get_value(a_16_b2 + 6, 1) != 0x1:
         disabled = True
-        data[0xde00].set_value(0x50 * 8 + 6, 1, 0x1)
+        data[0xf106].set_value(a_16_b2 + 6, 1, 0x1)
 
-    if data[0xde00].get_value(0x50 * 8 + 5, 1) != 0x0:
+    if data[0xf106].get_value(a_16_b2 + 5, 1) != 0x0:
         disabled = True
-        data[0xde00].set_value(0x50 * 8 + 5, 1, 0x0)
+        data[0xf106].set_value(a_16_b2 + 5, 1, 0x0)
 
     if disabled:
         logger.info("Enable \"SCBS-R\"")

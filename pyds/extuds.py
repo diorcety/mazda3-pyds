@@ -155,13 +155,13 @@ class ExtendedUDS(object):
             raise Exception("Invalid func %x for a request of type %x" % (rfunc, func))
 
     def send_cc(self, func, type, timeout=2000):
-        reply = self.send(uds.UDS_SERVICES_CC, bytearray(func, type))
+        reply = self.send(uds.UDS_SERVICES_CC, bytearray(func, type), timeout)
         data = reply.getData()
         rfunc = self.slice_data(data, uds, 'UDS_CC_SUB_FUNCTION')[0]
         if rfunc != func:
             raise Exception("Invalid func %x for a request of type %x" % (rfunc, func))
 
-    def reset(self, resetType):
+    def reset(self, resetType, timeout=2000):
         type = bytearray([resetType])
         reply = self.send(uds.UDS_SERVICES_ER, type, timeout)
         reply_data = reply.getData()
@@ -169,7 +169,7 @@ class ExtendedUDS(object):
         if type != reply_type:
             raise Exception("Invalid type %x for a request of type %x" % (type[0], reply_type[0]))
 
-    def change_diagnostic_session(self, sessionType):
+    def change_diagnostic_session(self, sessionType, timeout=2000):
         type = bytearray([sessionType])
         reply = self.send(uds.UDS_SERVICES_DSC, type, timeout)
         reply_data = reply.getData()
@@ -177,7 +177,7 @@ class ExtendedUDS(object):
         if type != reply_type:
             raise Exception("Invalid type %x for a request of type %x" % (type[0], reply_type[0]))
 
-    def grant_security_access(self, algo):
+    def grant_security_access(self, algo, timeout=2000):
         type = bytearray([uds.UDS_SA_TYPES_SEED_2])
         seed_reply = self.send(uds.UDS_SERVICES_SA, type, timeout)
         seed_reply_data = seed_reply.getData()
@@ -193,7 +193,7 @@ class ExtendedUDS(object):
         if type != reply_type:
             raise Exception("Invalid type %d for a request of type %d" % (type[0], reply_type[0]))
 
-    def upload(self, addr_tuple, size_tuple):
+    def upload(self, addr_tuple, size_tuple, timeout=2000):
         addr, addr_s = addr_tuple
         size, size_s = size_tuple
         compression = 0

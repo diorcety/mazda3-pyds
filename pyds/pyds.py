@@ -62,7 +62,7 @@ class Modes(Enum):
     hack = "Support MS-CAN as HS-CAN"
 
     def __str__(self):
-        return self.value
+        return self.name
 
 
 def get_uds_channel(device, bus, mode, speed, tester, ecu):
@@ -100,7 +100,7 @@ def get_module_channel(device, mode, vehicle, module):
     md = vd.modules[module]
     bus = md.bus
     speed = vd.buses[bus]
-    addr = module
+    addr = module.value
     channel = get_uds_channel(device, bus, mode, speed, addr + 8, addr)
     return ModuleExtendedUDS(channel, vehicle, module)
 
@@ -109,8 +109,9 @@ def change_session(channel, conf=None):
     vd = vehicles_data[channel.vehicle]
     md = vd.modules[channel.module]
     if conf:
-        algo = md.algorithm
-        conf = md.configurations[conf]
+        security = md.security
+        algo = security.algorithm
+        conf = security.configurations[conf]
         session = conf.session
         level = conf.level
         key = conf.key
@@ -221,20 +222,24 @@ class PydsApp(Cmd):
         def ic():
             channel = self.get_module_channel(Vehicles.Mazda3_2015, Mazda3_2015.IC)
 
-            data = {}
+            data = {
+                0xf106: pyds.types.Normal(channel.send_rdbi(0xf106, 2000)),
+            }
 
             channel = change_session(channel, SecurityType.Config)
 
-            modified_data = unlock_ic_features(data)
+            modified_data = data
+            #modified_data = unlock_ic_features(data)
 
             for did, diddata in modified_data.items():
                 byte_array = diddata.to_bytearray()
-                if data[did].to_bytearray() != byte_array:
+                if True or data[did].to_bytearray() != byte_array:
                     channel.send_wdbi(did, byte_array, 500)
 
             channel.reset(uds.UDS_ER_TYPES_HARD_RESET)
 
-        rbcm()
+        #rbcm()
+        ic()
 
         print("Unlocks done!")
 

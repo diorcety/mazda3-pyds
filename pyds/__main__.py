@@ -18,7 +18,12 @@ logger = logging.getLogger(__name__)
 
 def cmdloop(app, args=None):
     if args is not None and len(args):
-        return app.run_commands_at_invocation([str.join(' ', args)])
+        if hasattr(app, 'run_commands_at_invocation'):
+            return app.run_commands_at_invocation([str.join(' ', args)])
+        else:
+            app.debug = True
+            app.cmdqueue.extend([str.join(' ', args), 'eos', 'quit'])
+            return app.cmdloop()
     else:
         return app.cmdloop()
 
@@ -30,7 +35,7 @@ def get_mode(mode):
     print("")
     while True:
         index = 0
-        for mode, description in [(x.key, x.value) for x in list(Modes)]:
+        for mode, description in [(x.name, x.value) for x in list(Modes)]:
             print("%d - %s" % (index, description))
             index = index + 1
         mode_index_str = input("Select your mode: ")
@@ -38,7 +43,7 @@ def get_mode(mode):
             mode_index = int(mode_index_str)
             if mode_index < 0 or mode_index >= len(Modes):
                 raise Exception("Invalid index")
-            mode = Modes[mode_index]
+            mode = list(Modes)[mode_index]
             print("")
             return mode
         except Exception as e:
@@ -121,14 +126,13 @@ def _main(argv):
 
     parser = argparse.ArgumentParser(prog=argv[0], description="PYthon iDS tool",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('port', help="port")
     parser.add_argument('-v', '--verbose', dest='verbose_count', action='count', default=0,
                         help="increases log verbosity for each occurrence.")
     parser.add_argument('-l', '--library', help="Library to use")
     # Add parameter for Windows platforms
     if sys.platform == 'win32':
         parser.add_argument('-d', '--device', help="Device to use")
-    parser.add_argument('-m', '--mode', type=Modes, choices=list(Modes), help="Library mode")
+    parser.add_argument('-m', '--mode', type=lambda m: Modes[m], choices=list(Modes), help="Library mode")
     parser.add_argument('commands', nargs='*',
                         help='list of commands to execute')
 

@@ -25,6 +25,7 @@ __version__ = "0.0.1"
 
 import sys
 import re
+from pyds.structs import Algorithm
 
 # Fix Python 2.x.
 try:
@@ -40,7 +41,7 @@ class FordCommon14229Security(object):
 
     def __init__(self, vehicle_seed):
         self.vehicle_seed = vehicle_seed
-        assert len(vehicle_seed) == 5
+        assert len(vehicle_seed) == 6
 
     def compute(self, session_seed):
         assert len(session_seed) == 3
@@ -67,10 +68,10 @@ class FordCommon14229Security(object):
 
 
 def get_security_algorithm(algo, *data):
-    if algo == 70:
+    if algo == Algorithm.Ford:
         return FordCommon14229Security(*data)
     else:
-        raise Exception("Invalid SecurityAlgorithm %d" % (algo))
+        raise Exception("Invalid SecurityAlgorithm %s" % (str(algo)))
 
 
 ####################
