@@ -82,6 +82,7 @@ class ExtendedUDS(object):
             return reply
 
     def send(self, sid, data, timeout=2000):
+        timeout_multiplier = 1
         fdata = bytearray([sid])
         fdata.extend(data)
         message = uds.UDSMessage(fdata)
@@ -93,7 +94,7 @@ class ExtendedUDS(object):
         logger.debug("Sending: %s" % (" ".join(['%02x' % (k) for k in fdata])))
 
         while True:
-            reply = self.buildMessage(self._uds_channel.send(message, timeout))
+            reply = self.buildMessage(self._uds_channel.send(message, timeout * timeout_multiplier))
             message = None
             logger.debug("Received: %s" % (" ".join(['%02x' % (k) for k in reply.getData()])))
             if isinstance(reply, uds.UDSNegativeResponseMessage):
@@ -104,6 +105,7 @@ class ExtendedUDS(object):
                 if srdid != sid or error != uds.UDS_RESPONSE_CODES_RCRRP:
                     raise Exception("Invalid reply %x for a request of type %x" % (reply.getServiceID(), sid))
                 logger.debug("Response delayed")
+                timeout_multiplier *= 2
                 continue
             elif reply.getServiceID() != (sid | uds.UDS_REPLY_MASK):
                 raise Exception("Invalid reply %x for a request of type %x" % (reply.getServiceID(), sid))
