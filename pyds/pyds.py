@@ -29,6 +29,8 @@ except NameError:
     input = input
 
 import logging
+import time
+import gc
 
 import j2534
 import uds
@@ -189,6 +191,8 @@ class PydsApp(Cmd):
         rbcm_dd01_data = channel.send_rdbi(0xdd01, 2000)
         print("RBCM 0xDD01 data(Millage): %s" % (" ".join(['%02x' % (k) for k in rbcm_dd01_data])))
 
+        del channel
+
         channel = self.get_module_channel(Vehicles.Mazda3_2015, Mazda3_2015.IC)
         ic_de00_data = channel.send_rdbi(0xde00, 2000)
         print("IC 0xDE00 ?: %s" % (" ".join(['%02x' % (k) for k in ic_de00_data])))
@@ -198,6 +202,27 @@ class PydsApp(Cmd):
         print("IC 0xDE02 ?: %s" % (" ".join(['%02x' % (k) for k in ic_de02_data])))
         ic_f106_data = channel.send_rdbi(0xf106, 2000)
         print("IC 0xF106 ?: %s" % (" ".join(['%02x' % (k) for k in ic_f106_data])))
+
+        del channel
+
+        def to_string(x):
+            return x.decode('utf-8').rstrip('\0')
+
+        channel = self.get_module_channel(Vehicles.Mazda3_2015, Mazda3_2015.PCM)
+        pcm_f188_data = channel.send_rdbi(0xf188, 2000)
+        print("PCM 0xF188 ?: %s" % (to_string(pcm_f188_data)))
+        pcm_f190_data = channel.send_rdbi(0xf190, 2000)
+        print("PCM 0xF190 VIN: %s" % (to_string(pcm_f190_data)))
+        pcm_f111_data = channel.send_rdbi(0xf111, 2000)
+        print("PCM 0xF111 ?: %s" % (to_string(pcm_f111_data)))
+        pcm_f112_data = channel.send_rdbi(0xf113, 2000)
+        print("PCM 0xF112 ?: %s" % (to_string(pcm_f112_data)))
+        pcm_f113_data = channel.send_rdbi(0xf113, 2000)
+        print("PCM 0xF113 ?: %s" % (to_string(pcm_f113_data)))
+        pcm_de00_data = channel.send_rdbi(0xde00, 2000)
+        print("PCM 0xDE00 ?: %s" % (" ".join(['%02x' % (k) for k in pcm_de00_data])))
+        pcm_de01_data = channel.send_rdbi(0xde01, 2000)
+        print("PCM 0xDE01 ?: %s" % (" ".join(['%02x' % (k) for k in pcm_de01_data])))
 
     def do_unlock(self, args):
         def rbcm():
@@ -242,6 +267,67 @@ class PydsApp(Cmd):
 
         print("Unlocks done!")
 
+    def do_scbs(self, args):
+        channel = self.get_module_channel(Vehicles.Mazda3_2015, Mazda3_2015.PSM)
+        channel = change_session(channel, SecurityType.SelfTest)
+
+        def to_string(x):
+            return x.decode('utf-8').rstrip('\0')
+
+        pcm_f188_data = channel.send_rdbi(0xf188, 2000)
+        print("PSM 0xF188 ?: %s" % (to_string(pcm_f188_data)))
+        pcm_f190_data = channel.send_rdbi(0xf190, 2000)
+        print("PSM 0xF190 VIN: %s" % (to_string(pcm_f190_data)))
+        pcm_f111_data = channel.send_rdbi(0xf111, 2000)
+        print("PSM 0xF111 ?: %s" % (to_string(pcm_f111_data)))
+        pcm_f112_data = channel.send_rdbi(0xf113, 2000)
+        print("PSM 0xF112 ?: %s" % (to_string(pcm_f112_data)))
+        pcm_f113_data = channel.send_rdbi(0xf113, 2000)
+        print("PSM 0xF113 ?: %s" % (to_string(pcm_f113_data)))
+
+        data = {
+            0xda70: pyds.types.Normal(channel.send_rdbi(0xda70, 2000)),
+            0xda72: pyds.types.Normal(channel.send_rdbi(0xda72, 2000)),
+            0xda73: pyds.types.Normal(channel.send_rdbi(0xda73, 2000)),
+            0xda74: pyds.types.Normal(channel.send_rdbi(0xda74, 2000)),
+            0xda75: pyds.types.Normal(channel.send_rdbi(0xda75, 2000)),
+            0xda76: pyds.types.Normal(channel.send_rdbi(0xda76, 2000)),
+            0xda77: pyds.types.Normal(channel.send_rdbi(0xda77, 2000)),
+            0xda78: pyds.types.Normal(channel.send_rdbi(0xda78, 2000)),
+            0xda79: pyds.types.Normal(channel.send_rdbi(0xda79, 2000)),
+            0xda7d: pyds.types.Normal(channel.send_rdbi(0xda7d, 2000)),
+            0xda84: pyds.types.Normal(channel.send_rdbi(0xda84, 2000)),
+        }
+
+        print("Front Left Corner Sensor: %d" % (data[0xda76].get_value(0, 255)))
+        print("Front Right Corner Sensor: %d" % (data[0xda77].get_value(0, 255)))
+        print("Front Left Sensor: %d" % (data[0xda78].get_value(0, 255)))
+        print("Front Right Sensor: %d" % (data[0xda79].get_value(0, 255)))
+
+        print("Rear Left Corner Sensor: %d" % (data[0xda72].get_value(0, 255)))
+        print("Rear Right Corner Sensor: %d" % (data[0xda73].get_value(0, 255)))
+        print("Rear Left Sensor: %d" % (data[0xda74].get_value(0, 255)))
+        print("Rear Right Sensor: %d" % (data[0xda75].get_value(0, 255)))
+
+        print("Rear Buzzer Output status: %d" % (data[0xda84].get_value(0, 7)))
+        print("Front Buzzer Output status: %d" % (data[0xda84].get_value(3, 7)))
+        print("PSM Off Switch: %d" % (data[0xda84].get_value(7, 1)))
+
+        print("Rear SCBS Control is Prohibited by DTC: %d" % (data[0xda70].get_value(0, 1)))
+        print("Rear SCBS Control is Prohibited by Towbar Connection: %d" % (data[0xda70].get_value(2, 1)))
+        print("Rear SCBS Control is Prohibited by Trailer Connection: %d" % (data[0xda70].get_value(3, 1)))
+        print("Rear SCBS Control is Prohibited by Factory Mode: %d" % (data[0xda70].get_value(4, 1)))
+        print("Rear SCBS Control is Prohibited by SCBS Switch OFF: %d" % (data[0xda70].get_value(5, 1)))
+        print("Rear SCBS Control is Prohibited by PCM fault: %d" % (data[0xda70].get_value(6, 1)))
+        print("Rear SCBS Control is Prohibited by SCBS fault: %d" % (data[0xda70].get_value(7, 1)))
+        print("Rear SCBS Control is Prohibited by Battery Voltage: %d" % (data[0xda70].get_value(12, 1)))
+        print("Rear SCBS Control is Prohibited by Steering Angle: %d" % (data[0xda70].get_value(13, 1)))
+        print("Rear SCBS Control is Prohibited by Slope: %d" % (data[0xda70].get_value(14, 1)))
+        print("Rear SCBS Control is Prohibited by Ambient Air Temperature: %d" % (data[0xda70].get_value(15, 1)))
+        #data[0xda70].get_value(14, 1)  # Rear SCBS Control is Prohibited Wheelspin !!
+
+        print("Reverse Lamp: %d" % (data[0xda7d].get_value(7, 1)))
+
     def do_test(self, args):
         channel = self.get_module_channel(Vehicles.Mazda3_2015, Mazda3_2015.RBCM)
 
@@ -279,6 +365,37 @@ class PydsApp(Cmd):
         channel = change_session(channel, SecurityType.Config)
 
     def do_dump(self, args):
+        address = 0xFFF88800
+        size = 0x200000
+        block_size = 0x100
+
+        channel = self.get_module_channel(Vehicles.Mazda3_2015, Mazda3_2015.PCM)
+
+        channel.reset(uds.UDS_ER_TYPES_HARD_RESET)
+
+        """
+        channel = change_session(channel, SecurityType.IOControl)
+
+        caddr = address
+        rsize = size
+        retry = 0
+        max_retry = 4
+        with open("c:\\temp\\dump.bin", 'wb+') as file:
+            while rsize > 0:
+                try:
+                    data = channel.send_rmba((caddr, 4), (block_size, 2), 10000)
+                    print("Read %d bytes from %x" % (len(data), caddr))
+                    caddr += len(data)
+                    file.write(data)
+                    retry = 0
+                except:
+                    time.sleep(2.0)
+                    retry += 1
+                    if retry >= max_retry:
+                        raise
+
+        """
+        """
         channel = self.get_module_channel(Vehicles.Mazda3_2015, Mazda3_2015.PCM)
         channel = change_session(channel, SecurityType.IOControl)
 
@@ -291,7 +408,7 @@ class PydsApp(Cmd):
         # DSC
         channel = change_session(channel, SecurityType.Reprog)
 
-        data = channel.upload((0xFFF88800, 4), (0x200000, 4))
+        data = channel.upload((address, 4), (size, 4))
         with open("c:\\temp\\dump.bin", 'wb') as file:
             file.write(data)
 
@@ -307,3 +424,4 @@ class PydsApp(Cmd):
         channel.send_cc(uds.UDS_CC_TYPES_ENABLE_RX_AND_TX, 0x1)
 
         channel = change_session(channel)
+        """

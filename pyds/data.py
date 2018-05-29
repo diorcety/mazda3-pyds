@@ -36,6 +36,7 @@ class Mazda3_2015(Enum):
     SSU = 0x731
     EATC = 0x733
     RCM = 0x737
+    PSM = 0x736
     ICA = 0x793
     RBCM = 0x7B7
     PCM = 0x7E0
@@ -67,6 +68,23 @@ vehicles_data = {
                     uds.UDS_SA_TYPES_SEED_2,
                     uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
                     [75, 48, 50, 49, 54, 0]
+                ),
+            })),
+            Mazda3_2015.PSM: Module(CanBus.MS, Security(Algorithm.Ford, {
+                SecurityType.SelfTest: SecurityData(
+                    0,
+                    uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
+                    [0, 0, 0, 0, 0, 0]
+                ),
+                SecurityType.Config: SecurityData(
+                    0,
+                    uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
+                    [0, 0, 0, 0, 0, 0]
+                ),
+                SecurityType.IOControl: SecurityData(
+                    0,
+                    uds.UDS_DSC_TYPES_EXTENDED_DIAGNOSTIC_SESSION,
+                    [0, 0, 0, 0, 0, 0]
                 ),
             })),
             Mazda3_2015.EATC: Module(CanBus.MS, Security(Algorithm.Ford, {

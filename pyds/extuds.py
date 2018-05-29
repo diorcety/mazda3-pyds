@@ -135,6 +135,18 @@ class ExtendedUDS(object):
             raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rdid, did))
         return data[uds.UDS_RDBI_DATA_RECORD_OFFSET:]
 
+    def send_rmba(self, addr_tuple, size_tuple, timeout=2000):
+        addr, addr_s = addr_tuple
+        size, size_s = size_tuple
+        alfi = (0x0F & addr_s) << 0 | (0x0F & size_s) << 4
+        mem_addr = self.int32tobytes(addr)[-addr_s:]
+        mem_size = self.int32tobytes(size)[-size_s:]
+
+        ba = bytearray([alfi]) + mem_addr + mem_size
+        reply = self.send(uds.UDS_SERVICES_RMBA, ba, timeout)
+        data = reply.getData()
+        return data[uds.UDS_RMBA_DATA_RECORD_OFFSET:]
+
     def send_rdtci(self, type, data, timeout=2000):
         reply = self.send(uds.UDS_SERVICES_RDTCI, bytearray([type, data]), timeout)
         data = reply.getData()
@@ -150,6 +162,19 @@ class ExtendedUDS(object):
         if rdid != did:
             raise Exception("Invalid dataIdentifier %x for a request of type %x" % (rdid, did))
         return data[uds.UDS_RDBI_DATA_RECORD_OFFSET:]
+
+    def send_wmba(self, addr_tuple, size_tuple, data, timeout=2000):
+        addr, addr_s = addr_tuple
+        size, size_s = size_tuple
+        alfi = (0x0F & addr_s) << 0 | (0x0F & size_s) << 4
+        mem_addr = self.int32tobytes(addr)[-addr_s:]
+        mem_size = self.int32tobytes(size)[-size_s:]
+
+        ba = bytearray([alfi]) + mem_addr + mem_size
+        reply = self.send(uds.UDS_SERVICES_WMBA, ba + data, timeout)
+        data = reply.getData()
+        if ba != data[uds.UDS_WMBA_ADDRESS_AND_LENGTH_FORMAT_IDENTIFIER_OFFSET:]:
+            raise Exception("Invalid reply")
 
     def send_iocbi(self, did, parameter, state, timeout=2000):
         reply = self.send(uds.UDS_SERVICES_IOCBI, self.int16tobytes(did) + bytearray([parameter]) + state, timeout)
@@ -167,7 +192,7 @@ class ExtendedUDS(object):
             raise Exception("Invalid func %x for a request of type %x" % (rfunc, func))
 
     def send_cc(self, func, type, timeout=2000):
-        reply = self.send(uds.UDS_SERVICES_CC, bytearray(func, type), timeout)
+        reply = self.send(uds.UDS_SERVICES_CC, bytearray([func, type]), timeout)
         data = reply.getData()
         rfunc = self.slice_data(data, uds, 'UDS_CC_SUB_FUNCTION')[0]
         if rfunc != func:
@@ -210,18 +235,16 @@ class ExtendedUDS(object):
         size, size_s = size_tuple
         compression = 0
         encryption = 0
-        dfi(0x0F & compression) << 0 | (0x0F & encryption) << 4
+        dfi = (0x0F & compression) << 0 | (0x0F & encryption) << 4
         alfi = (0x0F & addr_s) << 0 | (0x0F & size_s) << 4
-        mem_addr = int32tobytes(addr)[0:addr_s]
-        mem_size = int32tobytes(size)[0:size_s]
+        mem_addr = self.int32tobytes(addr)[-addr_s:]
+        mem_size = self.int32tobytes(size)[-size_s:]
 
         # Request for upload
-        ba = bytearray([dfi, alfi, mem_addr, mem_size])
+        ba = bytearray([dfi, alfi]) + mem_addr + mem_size
         upload_reply_data = self.send(uds.UDS_SERVICES_RU, ba, timeout)
-        data = reply.getData()
         lfi = self.slice_data(upload_reply_data, uds, 'UDS_RU_LENGTH_FORMAT_IDENTIFIER')[0]
-        max_number_block_length = upload_reply_data[
-                                  UDS_RU_MAX_NUMBER_OF_BLOCK_LENGTH_OFFSET:UDS_RU_MAX_NUMBER_OF_BLOCK_LENGTH_OFFSET + lfi]
+        max_number_block_length = upload_reply_data[uds.UDS_RU_MAX_NUMBER_OF_BLOCK_LENGTH_OFFSET:uds.UDS_RU_MAX_NUMBER_OF_BLOCK_LENGTH_OFFSET + lfi]
 
         sbsc = 1
         data = bytearray()
@@ -239,7 +262,7 @@ class ExtendedUDS(object):
                 raise Exception("Invalid data length")
 
             # Append
-            packet_data = td_reply_data[UDS_TD_TRANSFER_PARAMETER_RECORD_OFFSET:]
+            packet_data = td_reply_data[uds.UDS_TD_TRANSFER_PARAMETER_RECORD_OFFSET:]
             data.extend(packet_data)
             print("Progression %.0f (%d of %d)" % ((len(data) * 100) / size, len(data), size),
                   sep='\r', end='', flush=True)
